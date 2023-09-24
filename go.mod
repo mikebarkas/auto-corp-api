@@ -2,7 +2,10 @@ module github.com/mikebarkas/auto-corp
 
 go 1.21.0
 
-require github.com/labstack/echo/v4 v4.11.1
+require (
+	github.com/labstack/echo/v4 v4.11.1
+	github.com/lib/pq v1.10.9
+)
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
