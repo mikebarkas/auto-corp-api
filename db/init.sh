@@ -16,8 +16,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$AUTO_DATABASE" <<
     model varchar(255) NOT NULL,
     color varchar(100),
     price money NOT NULL,
-    mileage integer,
-    date_created timestamp NOT NULL DEFAULT NOW(),
-    date_sold timestamp
+    mileage integer
   );
 EOSQL
