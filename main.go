@@ -26,8 +26,21 @@ func main() {
 	e.GET("/count", func(c echo.Context) error {
 		return handleCount(db, c)
 	})
+	e.GET("/search", func(c echo.Context) error {
+		return handleSearch(db, c)
+	})
 
 	e.Logger.Fatal(e.Start(":8080"))
+}
+
+type Auto struct {
+	ID      int64  `json:"id"`
+	Year    int64  `json:"year"`
+	Make    string `json:"make"`
+	Model   string `json:"model"`
+	Color   string `json:"color"`
+	Price   string `json:"price"`
+	Mileage int64  `json:"mileage"`
 }
 
 func handleCount(db *sql.DB, c echo.Context) error {
@@ -46,6 +59,76 @@ func handleJson(c echo.Context) error {
 		Hello  string
 	}{Status: "OK", Hello: "Hello from Docker"})
 
+}
+
+func handleSearch(db *sql.DB, c echo.Context) error {
+	var value string
+	var search string
+
+	// Only one param allowed
+	// TODO: improve how the params are defined
+	params := c.QueryParams()
+	if val, ok := params["make"]; ok {
+		value = val[0]
+		search = "make"
+	}
+	if val, ok := params["price"]; ok {
+		value = val[0]
+		search = "price"
+	}
+	if val, ok := params["mileage"]; ok {
+		value = val[0]
+		search = "mileage"
+	}
+	// TODO: add param error checking and return
+
+	rows, err := searchParam(db, c, search, value)
+	if err != nil {
+		return c.HTML(http.StatusInternalServerError, err.Error())
+	}
+	return c.JSON(http.StatusOK, struct {
+		Status  string
+		Data    []Auto
+		Results int
+	}{Status: "OK", Results: len(rows), Data: rows})
+
+}
+
+func searchParam(db *sql.DB, c echo.Context, search string, value string) ([]Auto, error) {
+
+	var autos []Auto
+	// Comparison changes if numbers are given
+	compare := "="
+	if search == "price" || search == "mileage" {
+		compare = "<="
+	}
+
+	queryString := fmt.Sprintf("SELECT * FROM autos WHERE %s%s'%v'", search, compare, value)
+
+	rows, err := db.Query(queryString)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var auto Auto
+		if err := rows.Scan(
+			&auto.ID,
+			&auto.Year,
+			&auto.Make,
+			&auto.Model,
+			&auto.Color,
+			&auto.Price,
+			&auto.Mileage,
+		); err != nil {
+			return nil, fmt.Errorf("handleSearch: %v", err)
+		}
+		autos = append(autos, auto)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("handleSearch: %v", err)
+	}
+	return autos, nil
 }
 
 func initDB() (*sql.DB, error) {
