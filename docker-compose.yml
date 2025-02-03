@@ -6,7 +6,7 @@ services:
       - db
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
     container_name: auto-api
     hostname: auto-api
     networks:
